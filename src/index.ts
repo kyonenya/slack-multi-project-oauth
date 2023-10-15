@@ -1,4 +1,5 @@
-import { Hono } from 'hono'
+import { Hono } from 'hono';
+import { SlackApp, SlackEdgeAppEnv } from 'slack-cloudflare-workers';
 
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
@@ -17,9 +18,28 @@ export interface Env {
   // MY_QUEUE: Queue;
 }
 
+// const app = new Hono()
 
-const app = new Hono()
+// app.get('/', (c) => c.text('Hello Hono!'))
 
-app.get('/', (c) => c.text('Hello Hono!'))
+// export default app
 
-export default app
+export default {
+  async fetch(
+    request: Request,
+    env: SlackEdgeAppEnv,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
+    const app = new SlackApp({ env });
+
+    // Events API では 3 秒以内に同期的に応答しないと実現できない要件がないので
+    // デフォルトで lazy 関数だけを渡せるようにしている
+    app.event('app_mention', async ({ context }) => {
+      await context.say({
+        text: `<@${context.userId}> さん、何かご用ですか？`,
+      });
+    });
+
+    return await app.run(request, ctx);
+  },
+};
