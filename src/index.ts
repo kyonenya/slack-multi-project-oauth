@@ -1,4 +1,3 @@
-import { Hono } from 'hono';
 import { SlackApp, SlackEdgeAppEnv } from 'slack-cloudflare-workers';
 
 export interface Env {
@@ -18,12 +17,6 @@ export interface Env {
   // MY_QUEUE: Queue;
 }
 
-// const app = new Hono()
-
-// app.get('/', (c) => c.text('Hello Hono!'))
-
-// export default app
-
 export default {
   async fetch(
     request: Request,
@@ -32,11 +25,9 @@ export default {
   ): Promise<Response> {
     const app = new SlackApp({ env });
 
-    // Events API では 3 秒以内に同期的に応答しないと実現できない要件がないので
-    // デフォルトで lazy 関数だけを渡せるようにしている
     app.event('app_mention', async ({ context }) => {
       await context.say({
-        text: `<@${context.userId}> さん、何かご用ですか？`,
+        text: `<@${context.userId}> さんの teamId は ${context.teamId} です。`,
       });
     });
 
