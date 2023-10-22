@@ -2,6 +2,11 @@ name = "slack-multi-project-oauth"
 main = "src/index.ts"
 compatibility_date = "2023-10-10"
 
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "slack-multi-project-oauth"
+database_id = "60e2a218-f974-4c73-9398-fff461e298c3"
+
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.
 # Docs: https://developers.cloudflare.com/workers/platform/environment-variables

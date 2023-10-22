@@ -6,14 +6,18 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
+    "drizzle:generate": "drizzle-kit generate:sqlite --out migrations --schema src/schema.ts",
+    "drizzle:up": "drizzle-kit up:sqlite --schema=src/schema.ts",
     "format": "prettier --write '**/*.ts'"
   },
   "dependencies": {
+    "drizzle-orm": "^0.28.6",
     "hono": "^3.7.6",
     "slack-cloudflare-workers": "^0.5.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",
+    "drizzle-kit": "^0.19.13",
     "prettier": "^3.0.3",
     "typescript": "^5.0.4",
     "wrangler": "^3.0.0"
