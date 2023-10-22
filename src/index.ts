@@ -1,7 +1,13 @@
 import { Hono } from 'hono';
+import { drizzle } from 'drizzle-orm/d1';
+import { projects } from './schema';
 import type { SlackOAuthAndOIDCEnv } from 'slack-cloudflare-workers';
 
 const app = new Hono();
+
+export type Env = SlackOAuthAndOIDCEnv & {
+  DB: D1Database;
+};
 
 app.get('/', async (c) => {
   return c.json({ message: 'Hello from Hono!' });
@@ -52,7 +58,8 @@ app.post('/slack/events', async (c) => {
 
 app.get('/slack/oauth_redirect', async (c) => {
   const { code, state } = c.req.query();
-  const env = c.env as unknown as SlackOAuthAndOIDCEnv;
+  const env = c.env as unknown as Env;
+  const db = drizzle(env.DB);
 
   console.log(`State is: ${state}`);
   console.log(`Code is: ${code}`);
@@ -65,7 +72,7 @@ app.get('/slack/oauth_redirect', async (c) => {
   params.append('code', code);
   params.append(
     'redirect_uri',
-    'https://comments-brown-beyond-trademarks.trycloudflare.com/slack/oauth_redirect',
+    'https://relax-obligations-province-charles.trycloudflare.com/slack/oauth_redirect',
   );
 
   try {
@@ -82,6 +89,11 @@ app.get('/slack/oauth_redirect', async (c) => {
 
     if (data.ok) {
       console.log(`Access token: ${data.access_token}`);
+      await db.insert(projects).values({
+        slackBotToken: data.access_token,
+        teamId: data.team.id,
+        hfProjectId: state,
+      });
     } else {
       console.error(`Error: ${data.error}`);
     }
@@ -89,7 +101,11 @@ app.get('/slack/oauth_redirect', async (c) => {
     console.error(`Fetch failed: ${error}`);
   }
 
-  return c.json({ ok: true });
+  // await db.delete(projects);
+
+  const result = await db.select().from(projects).all();
+
+  return c.json({ result });
 });
 
 export default app;
