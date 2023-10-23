@@ -25,44 +25,45 @@ app.get('/', async (c) => {
 });
 
 app.post('/slack/events', async (c) => {
-  const db = drizzle(c.env.DB);
-  const body = await c.req.json();
-  const { event, team_id } = body;
+  try {
+    const db = drizzle(c.env.DB);
+    const body = await c.req.json();
+    const { event, team_id } = body;
 
-  // Verify URL
-  if ('challenge' in body) {
-    return c.json({ challenge: body.challenge });
-  }
-
-  console.log(event.channel);
-  console.log(team_id);
-
-  if (event && event.type === 'app_mention') {
-    // DBからリクエスト元ワークスペース用のOAuthトークンとプロジェクトIDを取り出す
-    const { slackBotToken, hfProjectId } = (
-      await db.select().from(projects).where(eq(projects.teamId, team_id))
-    )[0];
-
-    const text = `あなたのプロジェクトIDは ${hfProjectId} です。また、あなたのSlackチームIDは ${team_id} です。`;
-
-    // メッセージを送信
-    const response = await fetch('https://slack.com/api/chat.postMessage', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${slackBotToken}`,
-      },
-      body: JSON.stringify({
-        channel: event.channel,
-        text,
-      }),
-    });
-
-    const data: SlackAPIResponse = await response.json();
-
-    if (!data.ok) {
-      console.error(`Failed to send message: ${data.error}`);
+    // Verify URL
+    if ('challenge' in body) {
+      return c.json({ challenge: body.challenge });
     }
+
+    if (event && event.type === 'app_mention') {
+      // DBからリクエスト元ワークスペース用のOAuthトークンとプロジェクトIDを取り出す
+      const { slackBotToken, projectId } = (
+        await db.select().from(projects).where(eq(projects.teamId, team_id))
+      )[0];
+
+      const text = `あなたのSlackチームIDは \`${team_id}\` ですね。\nあなたのプロジェクトIDは \`${projectId}\` です。`;
+
+      // メッセージを送信
+      const response = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${slackBotToken}`,
+        },
+        body: JSON.stringify({
+          channel: event.channel,
+          text,
+        }),
+      });
+
+      const data: SlackAPIResponse = await response.json();
+
+      if (!data.ok) {
+        console.error(`Failed to send message: ${data.error}`);
+      }
+    }
+  } catch (e) {
+    console.error(`Post failed: ${e}`);
   }
 
   return c.json({ ok: true });
@@ -71,9 +72,6 @@ app.post('/slack/events', async (c) => {
 app.get('/slack/oauth_redirect', async (c) => {
   const db = drizzle(c.env.DB);
   const { code, state } = c.req.query();
-
-  console.log(`State is: ${state}`);
-  console.log(`Code is: ${code}`);
 
   if (!code) return c.json({ message: 'No code provided' });
 
@@ -93,21 +91,19 @@ app.get('/slack/oauth_redirect', async (c) => {
     });
 
     const data: OAuthV2AccessResponse = await response.json();
-    console.log(data);
 
-    if (data.ok) {
-      console.log(`Access token: ${data.access_token}`);
-      // DBにOAuthトークンとプロジェクトIDをチームIDと紐づけて保存
-      await db.insert(projects).values({
-        teamId: data.team?.id,
-        slackBotToken: data.access_token,
-        hfProjectId: state,
-      });
-    } else {
+    if (!data.ok) {
       console.error(`Error: ${data.error}`);
     }
-  } catch (error) {
-    console.error(`Fetch failed: ${error}`);
+
+    // DBにチームIDと紐づけてOAuthトークンとプロジェクトIDを保存
+    await db.insert(projects).values({
+      teamId: data.team?.id,
+      slackBotToken: data.access_token,
+      projectId: state,
+    });
+  } catch (e) {
+    console.error(`Fetch failed: ${e}`);
   }
 
   // await db.delete(projects);
