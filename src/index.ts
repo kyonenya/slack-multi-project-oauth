@@ -2,24 +2,32 @@ import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from './schema';
-import type { SlackOAuthAndOIDCEnv } from 'slack-cloudflare-workers';
+// 型定義のみ使用
+import type {
+  SlackAPIResponse,
+  OAuthV2AccessResponse,
+} from 'slack-cloudflare-workers';
 
-const app = new Hono();
 const baseUrl = 'https://participating-trial-handled-parker.trycloudflare.com';
 
-export type Env = SlackOAuthAndOIDCEnv & {
+export type Env = {
   DB: D1Database;
+  SLACK_CLIENT_ID: string;
+  SLACK_CLIENT_SECRET: string;
 };
 
+const app = new Hono<{ Bindings: Env }>();
+
 app.get('/', async (c) => {
-  return c.json({ message: 'Hello from Hono!' });
+  return c.html(
+    `<html><body><h1>Hello from Hono!</h1><form></form></html></body>`,
+  );
 });
 
 app.post('/slack/events', async (c) => {
+  const db = drizzle(c.env.DB);
   const body = await c.req.json();
   const { event, team_id } = body;
-  const env = c.env as unknown as Env;
-  const db = drizzle(env.DB);
 
   // Verify URL
   if ('challenge' in body) {
@@ -50,7 +58,7 @@ app.post('/slack/events', async (c) => {
       }),
     });
 
-    const data: any = await response.json();
+    const data: SlackAPIResponse = await response.json();
 
     if (!data.ok) {
       console.error(`Failed to send message: ${data.error}`);
@@ -61,9 +69,8 @@ app.post('/slack/events', async (c) => {
 });
 
 app.get('/slack/oauth_redirect', async (c) => {
+  const db = drizzle(c.env.DB);
   const { code, state } = c.req.query();
-  const env = c.env as unknown as Env;
-  const db = drizzle(env.DB);
 
   console.log(`State is: ${state}`);
   console.log(`Code is: ${code}`);
@@ -71,8 +78,8 @@ app.get('/slack/oauth_redirect', async (c) => {
   if (!code) return c.json({ message: 'No code provided' });
 
   const params = new URLSearchParams();
-  params.append('client_id', env.SLACK_CLIENT_ID ?? '');
-  params.append('client_secret', env.SLACK_CLIENT_SECRET ?? '');
+  params.append('client_id', c.env.SLACK_CLIENT_ID ?? '');
+  params.append('client_secret', c.env.SLACK_CLIENT_SECRET ?? '');
   params.append('code', code);
   params.append('redirect_uri', `${baseUrl}/slack/oauth_redirect`);
 
@@ -85,14 +92,14 @@ app.get('/slack/oauth_redirect', async (c) => {
       body: params,
     });
 
-    const data: any = await response.json();
+    const data: OAuthV2AccessResponse = await response.json();
     console.log(data);
 
     if (data.ok) {
       console.log(`Access token: ${data.access_token}`);
       // DBにOAuthトークンとプロジェクトIDをチームIDと紐づけて保存
       await db.insert(projects).values({
-        teamId: data.team.id,
+        teamId: data.team?.id,
         slackBotToken: data.access_token,
         hfProjectId: state,
       });
