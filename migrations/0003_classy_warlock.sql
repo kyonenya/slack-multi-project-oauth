@@ -1,1 +1,0 @@
-ALTER TABLE `projects` RENAME COLUMN `hf_project_id` TO `project_id`;

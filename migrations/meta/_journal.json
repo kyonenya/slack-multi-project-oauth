@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1697958789332,
-      "tag": "0000_mysterious_proemial_gods",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1697959803009,
-      "tag": "0001_nebulous_christian_walker",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1697960388775,
-      "tag": "0002_adorable_war_machine",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1698046318684,
-      "tag": "0003_classy_warlock",
+      "when": 1698054984873,
+      "tag": "0000_blue_yellow_claw",
       "breakpoints": true
     }
   ]
