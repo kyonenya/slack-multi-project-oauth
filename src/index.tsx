@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { html } from 'hono/html';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from './schema';
@@ -8,19 +9,83 @@ import type {
   OAuthV2AccessResponse,
 } from 'slack-cloudflare-workers';
 
-const baseUrl = 'https://participating-trial-handled-parker.trycloudflare.com';
+const baseUrl = 'https://proposal-workout-pontiac-take.trycloudflare.com';
 
 export type Env = {
   DB: D1Database;
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
+  SLACK_BOT_SCOPES: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
 app.get('/', async (c) => {
   return c.html(
-    `<html><body><h1>Hello from Hono!</h1><form></form></html></body>`,
+    html`<html>
+      <head>
+      <h1>Install the Slack App to Workspace <br/>with Your Own Project ID</h1>
+        <p>Please enter your Project ID below:</p>
+        <input type="text" id="projectIdInput" placeholder="Enter your project ID" />
+        <br/>
+        <button id="installButton">Install to Workspace</button>
+      <script>
+        document
+          .getElementById('installButton')
+          .addEventListener('click', function () {
+            const inputValue = document.getElementById('projectIdInput').value;
+            const targetURL =
+              'https://slack.com/oauth/v2/authorize?'
+              + 'client_id=${c.env.SLACK_CLIENT_ID}'
+              + '&scope=${encodeURIComponent(c.env.SLACK_BOT_SCOPES)}'
+              + '&redirect_uri=${baseUrl}/slack/oauth_redirect'
+              + '&state=encodeURIComponent(inputValue)';
+            window.location.href = targetURL;
+          });
+      </script>
+      <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background-color: #f6f8fa;
+                padding-top: 50px;
+            }
+            
+            h1 {
+                font-size: 24px;
+                text-align: center;
+                margin-bottom: 15px;
+                color: #333;
+                line-height: 1.4;
+            }
+
+            input#projectIdInput {
+                padding: 10px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                margin-bottom: 15px;
+                width: 80%;
+                max-width: 400px;
+            }
+
+            button#installButton {
+                padding: 10px 15px;
+                background-color: #0077b5;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+
+            button#installButton:hover {
+                background-color: #005582;
+            }
+        </style>
+      </body>
+    </html>`,
   );
 });
 
@@ -60,10 +125,11 @@ app.post('/slack/events', async (c) => {
 
       if (!data.ok) {
         console.error(`Failed to send message: ${data.error}`);
+        return c.json({ ok: false });
       }
     }
   } catch (e) {
-    console.error(`Post failed: ${e}`);
+    console.error(e);
   }
 
   return c.json({ ok: true });
@@ -103,7 +169,7 @@ app.get('/slack/oauth_redirect', async (c) => {
       projectId: state,
     });
   } catch (e) {
-    console.error(`Fetch failed: ${e}`);
+    console.error(e);
   }
 
   // await db.delete(projects);

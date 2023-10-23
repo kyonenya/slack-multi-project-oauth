@@ -1,5 +1,5 @@
 name = "slack-multi-project-oauth"
-main = "src/index.ts"
+main = "src/index.tsx"
 compatibility_date = "2023-10-10"
 
 [[d1_databases]]
