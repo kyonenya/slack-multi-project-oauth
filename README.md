@@ -39,6 +39,6 @@ Slackアプリインストール時のOAuth認証画面（「〇〇アプリが�
 
 ## 動作
 
-[![Image from Gyazo](https://t.gyazo.com/teams/nota/ac88fa46460aa6e58c271338dd628ce4.gif)](https://nota.gyazo.com/ac88fa46460aa6e58c271338dd628ce4)
+[![Image from Gyazo](https://t.gyazo.com/teams/nota/cd3a9615c51564961d7a7c6880300416.gif)](https://nota.gyazo.com/cd3a9615c51564961d7a7c6880300416)
 
-[![Image from Gyazo](https://t.gyazo.com/teams/nota/5146ad99ccf2e9c246a5ba91029be805.gif)](https://nota.gyazo.com/5146ad99ccf2e9c246a5ba91029be805)
+[![Image from Gyazo](https://t.gyazo.com/teams/nota/1ca23dd18d6754ff99106b070644f90e.gif)](https://nota.gyazo.com/1ca23dd18d6754ff99106b070644f90e)
