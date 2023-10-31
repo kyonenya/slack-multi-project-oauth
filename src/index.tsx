@@ -97,6 +97,9 @@ app.post('/slack/events', async (c) => {
     const requestBodyText = await c.req.text();
     const { event, team_id, challenge } = JSON.parse(requestBodyText);
 
+    // Verify URL
+    if (challenge) return c.json({ challenge });
+
     // Slackアプリからのリクエストではない場合は Unauthorized エラーを返す
     if (
       !(await verifySlackRequest({
@@ -108,9 +111,6 @@ app.post('/slack/events', async (c) => {
     ) {
       throw new HTTPException(401, { message: 'Invalid signature.' });
     }
-
-    // Verify URL
-    if (challenge) return c.json({ challenge });
 
     if (event && event.type === 'app_mention') {
       // DBからリクエスト元ワークスペース用のOAuthトークンとプロジェクトIDを取り出す
