@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy",
+    "publish": "wrangler publish",
     "dev": "wrangler dev --local --persist",
-    "start": "wrangler dev",
     "drizzle:generate": "drizzle-kit generate:sqlite --out migrations --schema src/schema.ts",
     "drizzle:up": "drizzle-kit up:sqlite --schema=src/schema.ts",
     "migrate:local": "wrangler d1 migrations apply slack-multi-project-oauth --local",
+    "migrate:production": "wrangler d1 migrations apply slack-multi-project-oauth",
     "format": "prettier --write '**/*.ts'"
   },
   "dependencies": {

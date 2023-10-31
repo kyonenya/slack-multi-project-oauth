@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from './schema';
 import { verifySlackRequest } from './verifySlackRequest';
+// 型定義のみ使用
 import type {
   SlackAPIResponse,
   OAuthV2AccessResponse,

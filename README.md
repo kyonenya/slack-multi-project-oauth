@@ -13,7 +13,7 @@
 - 複数ワークスペースでアプリを動作させるためには、ワークスペースとそのOAuthトークンとを紐付けてDBに保存しておいた上で、リクエストが来るたびごとにリクエスト元のワークスペースに紐づいたOAuthトークンを引っ張り出してきてからSlack APIを叩く必要がある
   - 今回はそのついでに社内用SaaSのプロジェクトIDもワークスペースに紐づけてDBに保存しておくことにする
   - そのため、DBのカラムは `teamId`, `slackBotToken`, `projectId` の3つを用意しておく
-    - [src/schema.ts](https://github.com/kyonenya/slack-multi-project-oauth/blob/main/src/schema.ts)
+  - [src/schema.ts](https://github.com/kyonenya/slack-multi-project-oauth/blob/main/src/schema.ts)
 
 ## Slackアプリのインストールの仕組み
 
@@ -35,7 +35,7 @@ Slackアプリインストール時のOAuth認証画面（「〇〇アプリが�
   - [Cloudflare D1 で ORM を使う (drizzle-orm)](https://zenn.dev/mizchi/articles/d1-drizzle-orm)
 - APIのルーティングにはHonoを使った（エッジサーバーで動くexpress的なライブラリ）
   - UIも同じくHonoで用意した。APIサーバーから簡易的なUIを作れる
-    -  [[Cloudflare Workers] HonoにJSXミドルウェアが追加されました](https://zenn.dev/yusukebe/articles/c9bc1aa389cbd7#jsx%E3%81%AE%E4%B8%AD%E3%81%AB%E3%82%B9%E3%83%8B%E3%83%9A%E3%83%83%E3%83%88%E3%82%92%E6%8C%BF%E5%85%A5%E3%81%99%E3%82%8B)
+  - [[Cloudflare Workers] HonoにJSXミドルウェアが追加されました](https://zenn.dev/yusukebe/articles/c9bc1aa389cbd7#jsx%E3%81%AE%E4%B8%AD%E3%81%AB%E3%82%B9%E3%83%8B%E3%83%9A%E3%83%83%E3%83%88%E3%82%92%E6%8C%BF%E5%85%A5%E3%81%99%E3%82%8B)
 
 ## 動作
 
