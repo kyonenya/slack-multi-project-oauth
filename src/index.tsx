@@ -173,20 +173,27 @@ app.get('/slack/oauth_redirect', async (c) => {
       projectId: state,
     });
   } catch (error) {
-    console.error(error);
     if (error instanceof Error) {
       return c.json({ error: error.message });
     }
+    return console.error(error);
   }
 
-  const result = await db.select().from(projects).all();
-
-  return c.json({ result });
+  // return c.json({ result: await db.select().from(projects).all() });
+  return c.json({ ok: true });
 });
 
 app.get('/slack/oauth_redirect/delete', async (c) => {
   const db = drizzle(c.env.DB);
-  await db.delete(projects);
+
+  try {
+    await db.delete(projects);
+  } catch (error) {
+    if (error instanceof Error) {
+      return c.json({ error: error.message });
+    }
+    return console.error(error);
+  }
 
   return c.json({ message: 'Deleted all projects.' });
 });
