@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { html } from 'hono/html';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from './schema';
-// 型定義のみ使用
+import { verifySlackRequest } from './verifySlackRequest';
 import type {
   SlackAPIResponse,
   OAuthV2AccessResponse,
@@ -14,6 +15,7 @@ export type Env = {
   SLACK_CLIENT_ID: string;
   SLACK_CLIENT_SECRET: string;
   SLACK_BOT_SCOPES: string;
+  SLACK_SIGNING_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -91,11 +93,23 @@ app.get('/', async (c) => {
 app.post('/slack/events', async (c) => {
   try {
     const db = drizzle(c.env.DB);
-    const body = await c.req.json();
-    const { event, team_id } = body;
+    const requestBodyText = await c.req.text();
+    const { event, team_id, challenge } = JSON.parse(requestBodyText);
+
+    // Slackアプリからのリクエストではない場合は Unauthorized エラーを返す
+    if (
+      !(await verifySlackRequest({
+        signingSecret: c.env.SLACK_SIGNING_SECRET,
+        requestBodyText,
+        timestampHeader: c.req.header('x-slack-request-timestamp') ?? '',
+        signatureHeader: c.req.header('x-slack-signature') ?? '',
+      }))
+    ) {
+      throw new HTTPException(401, { message: 'Invalid signature.' });
+    }
 
     // Verify URL
-    if ('challenge' in body) return c.json({ challenge: body.challenge });
+    if (challenge) return c.json({ challenge });
 
     if (event && event.type === 'app_mention') {
       // DBからリクエスト元ワークスペース用のOAuthトークンとプロジェクトIDを取り出す
@@ -105,7 +119,7 @@ app.post('/slack/events', async (c) => {
 
       const text = `あなたのSlackチームIDは \`${team_id}\` ですね。\nあなたのプロジェクトIDは \`${projectId}\` です。`;
 
-      // メッセージを送信
+      // メッセージを送信する
       const response = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
@@ -166,7 +180,7 @@ app.get('/slack/oauth_redirect', async (c) => {
       return c.json({ error: data.error });
     }
 
-    // DBにチームIDと紐づけつつOAuthトークンとプロジェクトIDを保存
+    // DBにチームIDと紐づけつつOAuthトークンとプロジェクトIDを保存する
     await db.insert(projects).values({
       teamId: data.team.id,
       slackBotToken: data.access_token,
