@@ -26,7 +26,9 @@ app.get('/', async (c) => {
   return c.html(
     html`<html>
       <head>
-      <h1>Install the Slack App to Workspace <br/>with Your Own Project ID</h1>
+        <title>Install Slack App to Your Workspace</title>
+      </head>
+      <h1>Install Slack App to Workspace <br/>with Your Own Project ID</h1>
         <p>Please enter your Project ID below:</p>
         <input type="text" id="projectIdInput" placeholder="Enter your project ID" />
         <br/>
@@ -141,10 +143,10 @@ app.post('/slack/events', async (c) => {
       }
     }
   } catch (error) {
-    console.error(error);
     if (error instanceof Error) {
       return c.json({ error: error.message });
     }
+    return console.error(error);
   }
 
   return c.json({ ok: true });
@@ -195,7 +197,49 @@ app.get('/slack/oauth_redirect', async (c) => {
   }
 
   // return c.json({ result: await db.select().from(projects).all() });
-  return c.json({ ok: true });
+  return c.redirect(`/slack/oauth_redirect/completed?projectId=${state}`);
+});
+
+app.get('/slack/oauth_redirect/completed', async (c) => {
+  return c.html(
+    html`<html>
+      <head>
+        <title>Successfully Installed</title>
+      </head>
+      <body>
+        <style>
+          body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f6f8fa;
+            padding-top: 50px;
+          }
+
+          h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+            line-height: 1.4;
+          }
+
+          code {
+            background-color: #f0f0f0;
+            border: 1px solid #cccccc;
+            color: #ff5555;
+            padding: 2px 4px;
+            font-family: Consolas, 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            border-radius: 4px;
+          }
+        </style>
+        <h1>Slack App Successfully Installed in Your Workspace!</h1>
+        <p>Your project ID is: <code>${c.req.query('projectId')}</code></p>
+      </body>
+    </html>`,
+  );
 });
 
 app.get('/slack/oauth_redirect/delete', async (c) => {
