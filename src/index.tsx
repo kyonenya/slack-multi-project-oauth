@@ -120,25 +120,47 @@ app.post('/slack/events', async (c) => {
         await db.select().from(projects).where(eq(projects.teamId, team_id))
       )[0];
 
-      const text = `あなたのSlackチームIDは \`${team_id}\` ですね。\nあなたのプロジェクトIDは \`${projectId}\` です。`;
+      // HelpfeelのAPIを叩く
+      const query = event.text.replace(/<@\w+>\s*/, ''); // メンションの部分を取り除く
+      const searchResponse: VectorSearchResponse = await (
+        await fetch('https://helpfeel.com/api/vector_search/help/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, kinds: [] }),
+        })
+      ).json();
+
+      const markdownList = searchResponse.results
+        .slice(0, 5) // 最大5件まで
+        .map((result) => {
+          const encodedUrl = result.payload.scrapboxUrl
+            .split('/')
+            .map((part, index, array) =>
+              // 末尾のScrapboxタイトルのみエンコードする
+              index === array.length - 1 ? encodeURIComponent(part) : part,
+            )
+            .join('/');
+          return `• <${encodedUrl}|${result.payload.question}>`;
+        })
+        .join('\n');
 
       // メッセージを送信する
-      const response = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${slackBotToken}`,
-        },
-        body: JSON.stringify({
-          channel: event.channel,
-          text,
-        }),
-      });
+      const response: SlackAPIResponse = await (
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${slackBotToken}`,
+          },
+          body: JSON.stringify({
+            channel: event.channel,
+            text: markdownList,
+          }),
+        })
+      ).json();
 
-      const data: SlackAPIResponse = await response.json();
-
-      if (!data.ok) {
-        console.error(`Failed to send message: ${data.error}`);
+      if (!response.ok) {
+        console.error(`Failed to send message: ${response.error}`);
         return c.json({ ok: false });
       }
     }
